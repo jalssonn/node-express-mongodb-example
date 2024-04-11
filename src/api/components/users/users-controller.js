@@ -52,8 +52,8 @@ async function createUser(request, response, next) {
     const email = request.body.email;
     const password = request.body.password;
 
-    const confirmPassword = request.body.confirmPassword;
-    if (password !== confirmPassword) {
+    const passwordConfirm = request.body.passwordConfirm;
+    if (password !== passwordConfirm) {
       throw errorResponder(
         errorTypes.INVALID_PASSWORD,
         'Password does not match'
@@ -136,8 +136,8 @@ async function updatePassword(request, response, next) {
     }
 
     const newPassword = request.body.newPassword;
-    const confirmPassword = request.body.confirmPassword;
-    if (newPassword !== confirmPassword) {
+    const passwordConfirm = request.body.passwordConfirm;
+    if (newPassword !== passwordConfirm) {
       throw errorResponder(
         errorTypes.INVALID_PASSWORD,
         'Password does not match the confirm'
