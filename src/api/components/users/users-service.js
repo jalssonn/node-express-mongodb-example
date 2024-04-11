@@ -1,5 +1,6 @@
 const usersRepository = require('./users-repository');
 const { hashPassword } = require('../../../utils/password');
+const { email } = require('../../../models/users-schema');
 
 /**
  * Get list of users
@@ -39,6 +40,16 @@ async function getUser(id) {
     name: user.name,
     email: user.email,
   };
+}
+
+/**
+ * Get user detail
+ * @param {string} id - User ID
+ * @returns {Object}
+ */
+async function emailChecker(email) {
+  const existingUser = await usersRepository.checkEmail(email);
+  return existingUser;
 }
 
 /**
@@ -86,6 +97,31 @@ async function updateUser(id, name, email) {
 }
 
 /**
+ * Update existing user
+ * @param {string} id - User ID
+ * @param {string} password - Password
+ * @param {string} email - Email
+ * @returns {boolean}
+ */
+async function updatePassword(id, password) {
+  const user = await usersRepository.getUser(id);
+  const hashedNewPassword = await hashPassword(password);
+
+  // User not found
+  if (!user) {
+    return null;
+  }
+
+  try {
+    await usersRepository.updatePassword(id, hashedNewPassword);
+  } catch (err) {
+    return null;
+  }
+
+  return true;
+}
+
+/**
  * Delete user
  * @param {string} id - User ID
  * @returns {boolean}
@@ -113,4 +149,6 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  emailChecker,
+  updatePassword,
 };

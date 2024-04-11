@@ -1,5 +1,6 @@
 const usersService = require('./users-service');
 const { errorResponder, errorTypes } = require('../../../core/errors');
+const { password } = require('../../../models/users-schema');
 
 /**
  * Handle get list of users request
@@ -51,6 +52,22 @@ async function createUser(request, response, next) {
     const email = request.body.email;
     const password = request.body.password;
 
+    const confirmPassword = request.body.confirmPassword;
+    if (password !== confirmPassword) {
+      throw errorResponder(
+        errorTypes.INVALID_PASSWORD,
+        'Password does not match'
+      );
+    }
+
+    const emailTaken = await usersService.emailChecker(email);
+    if (emailTaken) {
+      throw errorResponder(
+        errorTypes.EMAIL_ALREADY_TAKEN,
+        'Email already exist'
+      );
+    }
+
     const success = await usersService.createUser(name, email, password);
     if (!success) {
       throw errorResponder(
@@ -78,7 +95,56 @@ async function updateUser(request, response, next) {
     const name = request.body.name;
     const email = request.body.email;
 
+    const emailTaken = await usersService.emailChecker(email);
+    if (emailTaken) {
+      throw errorResponder(
+        errorTypes.EMAIL_ALREADY_TAKEN,
+        'Email already exist'
+      );
+    }
+
     const success = await usersService.updateUser(id, name, email);
+    if (!success) {
+      throw errorResponder(
+        errorTypes.UNPROCESSABLE_ENTITY,
+        'Failed to update user'
+      );
+    }
+
+    return response.status(200).json({ id });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+/**
+ * Handle update password request
+ * @param {object} request - Express request object
+ * @param {object} response - Express response object
+ * @param {object} next - Express route middlewares
+ * @returns {object} Response object or pass an error to the next route
+ */
+async function updatePassword(request, response, next) {
+  try {
+    const id = request.params.id;
+    const password = request.body.password;
+    if (!password) {
+      throw errorResponder(
+        errorTypes.INVALID_PASSWORD,
+        'old Password does not match'
+      );
+    }
+
+    const newPassword = request.body.newPassword;
+    const confirmPassword = request.body.confirmPassword;
+    if (newPassword !== confirmPassword) {
+      throw errorResponder(
+        errorTypes.INVALID_PASSWORD,
+        'Password does not match the confirm'
+      );
+    }
+
+    const success = await usersService.updatePassword(id, newPassword);
     if (!success) {
       throw errorResponder(
         errorTypes.UNPROCESSABLE_ENTITY,
@@ -122,5 +188,6 @@ module.exports = {
   getUser,
   createUser,
   updateUser,
+  updatePassword,
   deleteUser,
 };
